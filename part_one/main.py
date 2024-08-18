@@ -1,6 +1,6 @@
 
 from typing import List
-from utils import GMLBuilder, build_matrix, hamming_distance_vector, jaccard_similarity, mst_prim, pretty_print, write_to_matrix
+from utils import GMLBuilder, build_matrix, hamming_distance_vector, jaccard_similarity, mst_prim, pretty_print, relative_neighborhood_graph, write_to_matrix
 from reader import get_elections
 
 
@@ -45,9 +45,10 @@ pretty_print(matrix_columns_jaccard)
 
 # 1) c - mst, using prim
 hamming_distance_mst = GMLBuilder("hamming_distance_mst.gml")
-
 mst_prim(matrix, hamming_distance_mst, [str(election.year) for election in elections])
 hamming_distance_mst.write()
 
 # 2) Relative Neighborhood Graph
-
+hamming_distance_rng = GMLBuilder("hamming_distance_rng.gml")
+relative_neighborhood_graph(matrix, hamming_distance_rng, [str(election.year) for election in elections])
+hamming_distance_rng.write()

@@ -1,6 +1,7 @@
 
 
-from typing import List, Optional, Tuple, TypeVar
+from re import S
+from typing import Dict, List, Optional, Set, Tuple, TypeVar
 
 
 def hamming_distance(string_a: str, string_b: str) -> int:
@@ -31,26 +32,41 @@ def jaccard_similarity(a: List[int], b: List[int]) -> float:
 class GMLBuilder:
     def __init__(self, path: str):
         self.path = path
-        self.nodes: List[Tuple[int, str]] = []
-        self.edges: List[Tuple[int, int]] = []
+        # nodes: id -> (label, edges (targets))
+        self.nodes: Dict[int, Tuple[str, Set[int]]] = {}
         self.written = False
 
     def add_node(self, id_: int, label: str):
         assert not self.written, "GML Builder can not be used after contents have been written to file"
-        self.nodes.append((id_, label))
+        self.nodes[id_] = (label, set())
 
     def add_edge(self, source: int, target: int):
         assert not self.written, "GML Builder can not be used after contents have been written to file"
-        self.edges.append((source, target))
+        self.nodes[source][1].add(target)
+
 
     def write(self):
         assert not self.written, "GML Builder can not be used after contents have been written to file"
+        # source, target, bidirectional
+        edges: List[Tuple[int, int, bool]] = []
+        for source, (_, targets) in self.nodes.items():
+            for target in targets:
+                bidirectional = source in self.nodes[target][1]
+                if not bidirectional:
+                    edges.append((source, target, False))
+                    continue
+                # Only add bidirectional edge if not already added
+                if (target, source, True) not in edges:
+                    edges.append((source, target, True))
+
         with open(self.path, "w", encoding="utf-8") as f:
             f.write("graph [\n")
-            for node in self.nodes:
-                f.write(f"  node [\n    id {node[0]}\n    label \"{node[1]}\"\n  ]\n")
-            for edge in self.edges:
-                f.write(f"  edge [\n    source {edge[0]}\n    target {edge[1]}\n  ]\n")
+            for id_, (label, _) in self.nodes.items():
+                f.write(f"  node [\n    id {id_}\n    label \"{label}\"\n  ]\n")
+            for edge in edges:
+                # Adding the graphics part removes the default arrow in yEd
+                # TODO: Although one should prob be re-added for directed edges
+                f.write(f"  edge [\n    source {edge[0]}\n    target {edge[1]}\n    graphics []\n  ]\n")
             f.write("]\n")
         self.written = True
 
@@ -77,8 +93,24 @@ def mst_prim(matrix: List[List[int]], builder: GMLBuilder, labels: Optional[List
 def relative_neighborhood_graph(matrix: List[List[int]], builder: GMLBuilder, labels: Optional[List[str]] = None) -> None:
     if labels is None:
         labels = [str(i) for i in range(len(matrix))]
+    for i, label in enumerate(labels):
+        builder.add_node(i, label)
+    for i, row in enumerate(matrix):
+        for j, distance in enumerate(row):
+            if i == j:
+                continue
+            exists = False
+            # If there exists a node that is closer to both i and j than i and j should not be connected
+            for k in range(len(matrix)):
+                if i == k or j == k:
+                    continue
+                if matrix[i][k] < distance and matrix[j][k] < distance:
+                    exists = True
+                    break
+            if exists:
+                continue
 
-    return None
+            builder.add_edge(i, j)
 
 T = TypeVar("T")
 

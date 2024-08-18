@@ -126,121 +126,151 @@ graph [
   edge [
     source 0
     target 30
+    graphics []
   ]
   edge [
     source 30
     target 1
-  ]
-  edge [
-    source 30
-    target 13
-  ]
-  edge [
-    source 30
-    target 7
-  ]
-  edge [
-    source 30
-    target 28
-  ]
-  edge [
-    source 30
-    target 24
-  ]
-  edge [
-    source 24
-    target 15
-  ]
-  edge [
-    source 24
-    target 9
-  ]
-  edge [
-    source 24
-    target 5
-  ]
-  edge [
-    source 9
-    target 22
-  ]
-  edge [
-    source 22
-    target 23
-  ]
-  edge [
-    source 9
-    target 20
-  ]
-  edge [
-    source 30
-    target 17
-  ]
-  edge [
-    source 30
-    target 14
-  ]
-  edge [
-    source 30
-    target 12
-  ]
-  edge [
-    source 12
-    target 26
-  ]
-  edge [
-    source 26
-    target 11
-  ]
-  edge [
-    source 11
-    target 18
-  ]
-  edge [
-    source 30
-    target 10
-  ]
-  edge [
-    source 30
-    target 6
+    graphics []
   ]
   edge [
     source 30
     target 2
+    graphics []
   ]
   edge [
-    source 28
-    target 4
+    source 30
+    target 6
+    graphics []
   ]
   edge [
-    source 22
-    target 29
-  ]
-  edge [
-    source 29
-    target 21
-  ]
-  edge [
-    source 21
-    target 19
-  ]
-  edge [
-    source 9
-    target 27
-  ]
-  edge [
-    source 9
-    target 25
-  ]
-  edge [
-    source 25
-    target 3
+    source 30
+    target 7
+    graphics []
   ]
   edge [
     source 30
     target 8
+    graphics []
+  ]
+  edge [
+    source 30
+    target 10
+    graphics []
+  ]
+  edge [
+    source 30
+    target 12
+    graphics []
+  ]
+  edge [
+    source 30
+    target 13
+    graphics []
+  ]
+  edge [
+    source 30
+    target 14
+    graphics []
+  ]
+  edge [
+    source 30
+    target 17
+    graphics []
+  ]
+  edge [
+    source 30
+    target 24
+    graphics []
+  ]
+  edge [
+    source 30
+    target 28
+    graphics []
   ]
   edge [
     source 28
     target 16
+    graphics []
+  ]
+  edge [
+    source 28
+    target 4
+    graphics []
+  ]
+  edge [
+    source 24
+    target 9
+    graphics []
+  ]
+  edge [
+    source 24
+    target 5
+    graphics []
+  ]
+  edge [
+    source 24
+    target 15
+    graphics []
+  ]
+  edge [
+    source 9
+    target 25
+    graphics []
+  ]
+  edge [
+    source 9
+    target 27
+    graphics []
+  ]
+  edge [
+    source 9
+    target 20
+    graphics []
+  ]
+  edge [
+    source 9
+    target 22
+    graphics []
+  ]
+  edge [
+    source 22
+    target 29
+    graphics []
+  ]
+  edge [
+    source 22
+    target 23
+    graphics []
+  ]
+  edge [
+    source 12
+    target 26
+    graphics []
+  ]
+  edge [
+    source 26
+    target 11
+    graphics []
+  ]
+  edge [
+    source 11
+    target 18
+    graphics []
+  ]
+  edge [
+    source 29
+    target 21
+    graphics []
+  ]
+  edge [
+    source 21
+    target 19
+    graphics []
+  ]
+  edge [
+    source 25
+    target 3
+    graphics []
   ]
 ]
