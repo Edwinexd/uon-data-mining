@@ -70,10 +70,12 @@ class GMLBuilder:
             f.write("]\n")
         self.written = True
 
-def mst_prim(matrix: List[List[int]], builder: GMLBuilder, labels: Optional[List[str]] = None) -> None:
+T = TypeVar("T", int, float)
+
+def mst_prim(matrix: List[List[T]], builder: GMLBuilder, labels: Optional[List[str]] = None) -> None:
     if labels is None:
         labels = [str(i) for i in range(len(matrix))]
-    edges: List[Tuple[int, int, int]] = []
+    edges: List[Tuple[int, int, T]] = []
     for i, row in enumerate(matrix):
         for j, value in enumerate(row):
             edges.append((i, j, value))
@@ -90,7 +92,7 @@ def mst_prim(matrix: List[List[int]], builder: GMLBuilder, labels: Optional[List
         builder.add_edge(source, target)
         included.append(target)
 
-def relative_neighborhood_graph(matrix: List[List[int]], builder: GMLBuilder, labels: Optional[List[str]] = None) -> None:
+def relative_neighborhood_graph(matrix: List[List[T]], builder: GMLBuilder, labels: Optional[List[str]] = None) -> None:
     if labels is None:
         labels = [str(i) for i in range(len(matrix))]
     for i, label in enumerate(labels):
@@ -111,8 +113,6 @@ def relative_neighborhood_graph(matrix: List[List[int]], builder: GMLBuilder, la
                 continue
 
             builder.add_edge(i, j)
-
-T = TypeVar("T")
 
 def build_matrix(size: int, default: T = -1) -> List[List[T]]:
     return [[default for _ in range(size)] for _ in range(size)]

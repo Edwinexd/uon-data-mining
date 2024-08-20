@@ -52,3 +52,14 @@ hamming_distance_mst.write()
 hamming_distance_rng = GMLBuilder("hamming_distance_rng.gml")
 relative_neighborhood_graph(matrix, hamming_distance_rng, [str(election.year) for election in elections])
 hamming_distance_rng.write()
+
+# 3) Jaccard Similarity MST
+jaccard_similarity_mst = GMLBuilder("jaccard_similarity_mst.gml")
+mst_prim(matrix_jaccard, jaccard_similarity_mst, [str(election.year) for election in elections])
+jaccard_similarity_mst.write()
+
+# 4) Jaccard Similarity RNG
+jaccard_similarity_rng = GMLBuilder("jaccard_similarity_rng.gml")
+relative_neighborhood_graph(matrix_jaccard, jaccard_similarity_rng, [str(election.year) for election in elections])
+jaccard_similarity_rng.write()
+
