@@ -134,32 +134,22 @@ graph [
     graphics []
   ]
   edge [
-    source 0
-    target 21
-    graphics []
-  ]
-  edge [
-    source 0
-    target 22
-    graphics []
-  ]
-  edge [
-    source 0
-    target 24
-    graphics []
-  ]
-  edge [
     source 1
     target 28
     graphics []
   ]
   edge [
     source 1
-    target 20
+    target 12
     graphics []
   ]
   edge [
     source 1
+    target 13
+    graphics []
+  ]
+  edge [
+    source 2
     target 13
     graphics []
   ]
@@ -169,33 +159,13 @@ graph [
     graphics []
   ]
   edge [
-    source 2
-    target 10
-    graphics []
-  ]
-  edge [
-    source 2
-    target 13
-    graphics []
-  ]
-  edge [
-    source 2
-    target 15
-    graphics []
-  ]
-  edge [
-    source 2
-    target 23
-    graphics []
-  ]
-  edge [
     source 3
     target 24
     graphics []
   ]
   edge [
     source 3
-    target 26
+    target 18
     graphics []
   ]
   edge [
@@ -225,22 +195,17 @@ graph [
   ]
   edge [
     source 5
-    target 9
+    target 2
     graphics []
   ]
   edge [
     source 5
-    target 25
+    target 6
     graphics []
   ]
   edge [
     source 5
     target 15
-    graphics []
-  ]
-  edge [
-    source 6
-    target 10
     graphics []
   ]
   edge [
@@ -249,13 +214,8 @@ graph [
     graphics []
   ]
   edge [
-    source 6
-    target 15
-    graphics []
-  ]
-  edge [
-    source 6
-    target 23
+    source 7
+    target 27
     graphics []
   ]
   edge [
@@ -264,33 +224,8 @@ graph [
     graphics []
   ]
   edge [
-    source 7
-    target 14
-    graphics []
-  ]
-  edge [
-    source 7
-    target 19
-    graphics []
-  ]
-  edge [
-    source 7
-    target 24
-    graphics []
-  ]
-  edge [
-    source 7
-    target 27
-    graphics []
-  ]
-  edge [
     source 8
     target 17
-    graphics []
-  ]
-  edge [
-    source 8
-    target 14
     graphics []
   ]
   edge [
@@ -300,17 +235,27 @@ graph [
   ]
   edge [
     source 9
+    target 13
+    graphics []
+  ]
+  edge [
+    source 9
     target 14
     graphics []
   ]
   edge [
     source 9
-    target 30
+    target 23
     graphics []
   ]
   edge [
     source 10
-    target 27
+    target 2
+    graphics []
+  ]
+  edge [
+    source 10
+    target 6
     graphics []
   ]
   edge [
@@ -320,17 +265,7 @@ graph [
   ]
   edge [
     source 11
-    target 22
-    graphics []
-  ]
-  edge [
-    source 11
-    target 15
-    graphics []
-  ]
-  edge [
-    source 12
-    target 25
+    target 13
     graphics []
   ]
   edge [
@@ -339,13 +274,8 @@ graph [
     graphics []
   ]
   edge [
-    source 13
-    target 14
-    graphics []
-  ]
-  edge [
     source 14
-    target 21
+    target 13
     graphics []
   ]
   edge [
@@ -355,22 +285,17 @@ graph [
   ]
   edge [
     source 15
-    target 16
+    target 2
     graphics []
   ]
   edge [
-    source 17
-    target 21
+    source 15
+    target 6
     graphics []
   ]
   edge [
-    source 17
-    target 22
-    graphics []
-  ]
-  edge [
-    source 17
-    target 24
+    source 16
+    target 15
     graphics []
   ]
   edge [
@@ -399,18 +324,48 @@ graph [
     graphics []
   ]
   edge [
+    source 19
+    target 7
+    graphics []
+  ]
+  edge [
     source 20
-    target 22
+    target 1
     graphics []
   ]
   edge [
     source 21
-    target 25
+    target 0
+    graphics []
+  ]
+  edge [
+    source 21
+    target 17
     graphics []
   ]
   edge [
     source 22
     target 24
+    graphics []
+  ]
+  edge [
+    source 22
+    target 20
+    graphics []
+  ]
+  edge [
+    source 23
+    target 2
+    graphics []
+  ]
+  edge [
+    source 23
+    target 6
+    graphics []
+  ]
+  edge [
+    source 23
+    target 18
     graphics []
   ]
   edge [
@@ -424,13 +379,13 @@ graph [
     graphics []
   ]
   edge [
-    source 23
-    target 30
+    source 24
+    target 28
     graphics []
   ]
   edge [
     source 24
-    target 28
+    target 7
     graphics []
   ]
   edge [
@@ -440,7 +395,7 @@ graph [
   ]
   edge [
     source 25
-    target 29
+    target 12
     graphics []
   ]
   edge [
@@ -449,8 +404,13 @@ graph [
     graphics []
   ]
   edge [
-    source 26
-    target 30
+    source 30
+    target 9
+    graphics []
+  ]
+  edge [
+    source 30
+    target 23
     graphics []
   ]
 ]

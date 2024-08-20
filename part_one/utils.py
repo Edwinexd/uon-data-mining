@@ -1,6 +1,3 @@
-
-
-from re import S
 from typing import Dict, List, Optional, Set, Tuple, TypeVar
 
 
@@ -113,6 +110,37 @@ def relative_neighborhood_graph(matrix: List[List[T]], builder: GMLBuilder, labe
                 continue
 
             builder.add_edge(i, j)
+
+# TODO: Unsure if the implementation is correct
+def k_nearest_neighbor_graph(matrix: List[List[T]], builder: GMLBuilder, labels: Optional[List[str]] = None, k_count: int = 2) -> None:
+    if labels is None:
+        labels = [str(i) for i in range(len(matrix))]
+    for i, label in enumerate(labels):
+        builder.add_node(i, label)
+
+    for i, row in enumerate(matrix):
+        connected_to = []
+        for j, distance in enumerate(row):
+            if i == j:
+                continue
+            # amount of nodes with smaller distance to i than j
+            smaller = 0
+            for k, other_distance in enumerate(row):
+                if i == k or j == k:
+                    continue
+                if other_distance < distance:
+                    smaller += 1
+                if smaller >= k_count:
+                    break
+            # if the current distance is not of the k:th smallest, there should be no edge
+            if smaller >= k_count:
+                continue
+            
+            builder.add_edge(i, j)
+            connected_to.append((labels[j], distance))
+        # print(f"Connected {labels[i]} to {connected_to}")
+        
+
 
 def build_matrix(size: int, default: T = -1) -> List[List[T]]:
     return [[default for _ in range(size)] for _ in range(size)]

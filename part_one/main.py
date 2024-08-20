@@ -1,6 +1,5 @@
 
-from typing import List
-from utils import GMLBuilder, build_matrix, hamming_distance_vector, jaccard_similarity, mst_prim, pretty_print, relative_neighborhood_graph, write_to_matrix
+from utils import GMLBuilder, build_matrix, hamming_distance_vector, jaccard_similarity, k_nearest_neighbor_graph, mst_prim, pretty_print, relative_neighborhood_graph, write_to_matrix
 from reader import get_elections
 
 
@@ -20,7 +19,8 @@ matrix_jaccard = build_matrix(len(elections), -1.0)
 
 for i, election in enumerate(elections):
     for j, election2 in enumerate(elections):
-        write_to_matrix(matrix_jaccard, i, j, jaccard_similarity(list(election.to_binary_vector()), list(election2.to_binary_vector())))
+        # TODO: Just do this for distance?
+        write_to_matrix(matrix_jaccard, i, j, 1.0 - jaccard_similarity(list(election.to_binary_vector()), list(election2.to_binary_vector())))
 
 pretty_print(matrix_jaccard)
 
@@ -63,3 +63,13 @@ jaccard_similarity_rng = GMLBuilder("jaccard_similarity_rng.gml")
 relative_neighborhood_graph(matrix_jaccard, jaccard_similarity_rng, [str(election.year) for election in elections])
 jaccard_similarity_rng.write()
 
+
+# 5) Hamming Distance 2-NN graph
+hamming_distance_2nn = GMLBuilder("hamming_distance_2nn.gml")
+k_nearest_neighbor_graph(matrix, hamming_distance_2nn, [str(election.year) for election in elections], k_count=2)
+hamming_distance_2nn.write()
+
+# 6) Jaccard Similarity 2-NN graph
+jaccard_similarity_2nn = GMLBuilder("jaccard_similarity_2nn.gml")
+k_nearest_neighbor_graph(matrix_jaccard, jaccard_similarity_2nn, [str(election.year) for election in elections], k_count=2)
+jaccard_similarity_2nn.write()
