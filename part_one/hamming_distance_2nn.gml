@@ -136,27 +136,27 @@ graph [
   edge [
     source 1
     target 2
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 1
     target 6
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 1
     target 10
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 1
     target 12
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 1
     target 13
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 1
@@ -186,12 +186,12 @@ graph [
   edge [
     source 3
     target 10
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 3
     target 18
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 3
@@ -226,7 +226,7 @@ graph [
   edge [
     source 5
     target 15
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 6
@@ -241,12 +241,12 @@ graph [
   edge [
     source 7
     target 10
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 7
     target 12
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 7
@@ -276,22 +276,22 @@ graph [
   edge [
     source 9
     target 5
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 9
     target 8
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 9
     target 11
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 9
     target 13
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 9
@@ -301,27 +301,27 @@ graph [
   edge [
     source 9
     target 15
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 9
     target 16
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 9
     target 23
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 10
     target 2
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 10
     target 6
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 11
@@ -331,12 +331,12 @@ graph [
   edge [
     source 11
     target 13
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 11
     target 15
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 12
@@ -346,12 +346,12 @@ graph [
   edge [
     source 14
     target 8
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 14
     target 13
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 14
@@ -361,12 +361,12 @@ graph [
   edge [
     source 16
     target 8
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 16
     target 15
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 18
@@ -386,7 +386,7 @@ graph [
   edge [
     source 19
     target 27
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 19
@@ -396,27 +396,27 @@ graph [
   edge [
     source 21
     target 0
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 21
     target 17
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 22
     target 0
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 22
     target 17
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 22
     target 20
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 22
@@ -426,22 +426,22 @@ graph [
   edge [
     source 23
     target 2
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 23
     target 6
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 23
     target 10
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 23
     target 18
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 23
@@ -461,12 +461,12 @@ graph [
   edge [
     source 25
     target 5
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 25
     target 7
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 26
@@ -476,26 +476,26 @@ graph [
   edge [
     source 30
     target 5
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 30
     target 9
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 30
     target 16
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 30
     target 23
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
   edge [
     source 30
     target 26
-    graphics []
+    graphics [			targetArrow	"standard"]
   ]
 ]

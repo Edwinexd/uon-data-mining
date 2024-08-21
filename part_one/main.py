@@ -19,9 +19,10 @@ matrix_jaccard = build_matrix(len(elections), -1.0)
 
 for i, election in enumerate(elections):
     for j, election2 in enumerate(elections):
-        # TODO: Just do this for distance?
+        # TODO: Add comment that i convert it to distance
         write_to_matrix(matrix_jaccard, i, j, 1.0 - jaccard_similarity(list(election.to_binary_vector()), list(election2.to_binary_vector())))
 
+# TODO: Display part of the output to see if it is correct as part of hand in
 pretty_print(matrix_jaccard)
 
 # 1) b - comparing columns / attributes
@@ -39,6 +40,8 @@ for i, column in enumerate(columns):
     for j, column2 in enumerate(columns):
         write_to_matrix(matrix_columns, i, j, hamming_distance_vector(column, column2))
         write_to_matrix(matrix_columns_jaccard, i, j, jaccard_similarity(column, column2))
+
+# TODO: Display part of the output to see if it is correct as part of hand in
 
 pretty_print(matrix_columns)
 pretty_print(matrix_columns_jaccard)
@@ -73,3 +76,15 @@ hamming_distance_2nn.write()
 jaccard_similarity_2nn = GMLBuilder("jaccard_similarity_2nn.gml")
 k_nearest_neighbor_graph(matrix_jaccard, jaccard_similarity_2nn, [str(election.year) for election in elections], k_count=2)
 jaccard_similarity_2nn.write()
+
+# 7) Edges of MST that match with 2-NN for 1 and 5
+clusters_of_5_1 = GMLBuilder.intersection("clusters_of_5_1.gml", hamming_distance_mst, hamming_distance_2nn)
+clusters_of_5_1.write()
+
+# 8) Edges of MST that match with 2-NN for 6 and 3
+clusters_of_6_3 = GMLBuilder.intersection("clusters_of_6_3.gml", jaccard_similarity_mst, jaccard_similarity_2nn)
+clusters_of_6_3.write()
+
+
+# one table per cluster, node information 
+# one table for cluster 1, one for cluster 2 e.t.c.

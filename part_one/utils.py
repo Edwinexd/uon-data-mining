@@ -63,9 +63,27 @@ class GMLBuilder:
             for edge in edges:
                 # Adding the graphics part removes the default arrow in yEd
                 # TODO: Although one should prob be re-added for directed edges
-                f.write(f"  edge [\n    source {edge[0]}\n    target {edge[1]}\n    graphics []\n  ]\n")
+                target_arrow_string = '			targetArrow	"standard"' if not edge[2] else ""
+                f.write(f"  edge [\n    source {edge[0]}\n    target {edge[1]}\n    graphics [{target_arrow_string}]\n  ]\n")
             f.write("]\n")
         self.written = True
+
+    @classmethod
+    def intersection(cls, path: str, a: "GMLBuilder", b: "GMLBuilder") -> "GMLBuilder":
+        """Assumes nodes have the same id:s in both graphs"""
+        intersection = GMLBuilder(path)
+        for id_, (label, _) in a.nodes.items():
+            if id_ in b.nodes:
+                intersection.add_node(id_, label)
+
+        for id_, (_, targets) in a.nodes.items():
+            if id_ not in intersection.nodes:
+                continue
+            for target in targets:
+                if target in b.nodes:
+                    intersection.add_edge(id_, target)
+
+        return intersection
 
 T = TypeVar("T", int, float)
 
@@ -84,7 +102,7 @@ def mst_prim(matrix: List[List[T]], builder: GMLBuilder, labels: Optional[List[s
         # and then the ones which takes us somewhere new (i.e. target no in open set)
         available = list(filter(lambda x: x[0] in included and x[1] not in included, list(edges)))
         # if this were to fail there can exist no MST
-        source, target, _ = available.pop()
+        source, target, _ = available[0]
         builder.add_node(target, labels[target])
         builder.add_edge(source, target)
         included.append(target)
