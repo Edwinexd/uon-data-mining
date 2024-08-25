@@ -39,7 +39,7 @@ matrix_columns_jaccard = build_matrix(len(columns), -1.0)
 for i, column in enumerate(columns):
     for j, column2 in enumerate(columns):
         write_to_matrix(matrix_columns, i, j, hamming_distance_vector(column, column2))
-        write_to_matrix(matrix_columns_jaccard, i, j, jaccard_similarity(column, column2))
+        write_to_matrix(matrix_columns_jaccard, i, j, 1.0 - jaccard_similarity(column, column2))
 
 # TODO: Display part of the output to see if it is correct as part of hand in
 
@@ -57,14 +57,14 @@ relative_neighborhood_graph(matrix, hamming_distance_rng, [str(election.year) fo
 hamming_distance_rng.write()
 
 # 3) Jaccard Similarity MST
-jaccard_similarity_mst = GMLBuilder("jaccard_similarity_mst.gml")
-mst_prim(matrix_jaccard, jaccard_similarity_mst, [str(election.year) for election in elections])
-jaccard_similarity_mst.write()
+jaccard_distance_mst = GMLBuilder("jaccard_distance_mst.gml")
+mst_prim(matrix_jaccard, jaccard_distance_mst, [str(election.year) for election in elections])
+jaccard_distance_mst.write()
 
 # 4) Jaccard Similarity RNG
-jaccard_similarity_rng = GMLBuilder("jaccard_similarity_rng.gml")
-relative_neighborhood_graph(matrix_jaccard, jaccard_similarity_rng, [str(election.year) for election in elections])
-jaccard_similarity_rng.write()
+jaccard_distance_rng = GMLBuilder("jaccard_distance_rng.gml")
+relative_neighborhood_graph(matrix_jaccard, jaccard_distance_rng, [str(election.year) for election in elections])
+jaccard_distance_rng.write()
 
 
 # 5) Hamming Distance 2-NN graph
@@ -73,16 +73,16 @@ k_nearest_neighbor_graph(matrix, hamming_distance_2nn, [str(election.year) for e
 hamming_distance_2nn.write()
 
 # 6) Jaccard Similarity 2-NN graph
-jaccard_similarity_2nn = GMLBuilder("jaccard_similarity_2nn.gml")
-k_nearest_neighbor_graph(matrix_jaccard, jaccard_similarity_2nn, [str(election.year) for election in elections], k_count=2)
-jaccard_similarity_2nn.write()
+jaccard_distance_2nn = GMLBuilder("jaccard_distance_2nn.gml")
+k_nearest_neighbor_graph(matrix_jaccard, jaccard_distance_2nn, [str(election.year) for election in elections], k_count=2)
+jaccard_distance_2nn.write()
 
 # 7) Edges of MST that match with 2-NN for 1 and 5
 clusters_of_5_1 = GMLBuilder.intersection("clusters_of_5_1.gml", hamming_distance_mst, hamming_distance_2nn)
 clusters_of_5_1.write()
 
 # 8) Edges of MST that match with 2-NN for 6 and 3
-clusters_of_6_3 = GMLBuilder.intersection("clusters_of_6_3.gml", jaccard_similarity_mst, jaccard_similarity_2nn)
+clusters_of_6_3 = GMLBuilder.intersection("clusters_of_6_3.gml", jaccard_distance_mst, jaccard_distance_2nn)
 clusters_of_6_3.write()
 
 

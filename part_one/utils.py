@@ -62,7 +62,6 @@ class GMLBuilder:
                 f.write(f"  node [\n    id {id_}\n    label \"{label}\"\n  ]\n")
             for edge in edges:
                 # Adding the graphics part removes the default arrow in yEd
-                # TODO: Although one should prob be re-added for directed edges
                 target_arrow_string = '			targetArrow	"standard"' if not edge[2] else ""
                 f.write(f"  edge [\n    source {edge[0]}\n    target {edge[1]}\n    graphics [{target_arrow_string}]\n  ]\n")
             f.write("]\n")
