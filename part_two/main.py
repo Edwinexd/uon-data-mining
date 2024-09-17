@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 from utils import GMLBuilder, build_matrix, feature_selection, mst_prim, proteins_distance, relative_neighborhood_graph, samples_distance, write_to_matrix, pretty_print
 
 
@@ -179,6 +179,9 @@ alzheimers_proteins_rng = GMLBuilder("alzheimers_proteins_rng.gml")
 relative_neighborhood_graph(proteins_matrix, alzheimers_proteins_rng, proteins_labels)
 alzheimers_proteins_rng.write()
 
+# Exercise 3 (3 marks). Using the Alzheimer’s Disease Training dataset:
+# a) Implement a feature selection technique that selects a subset of features (from the total of 120 measured proteins) (1 mark). 
+
 # AD and NDC
 labels = ["AD", "NDC"]
 data_groups = [[], []]
@@ -187,3 +190,119 @@ for i, entry in enumerate(samples_data):
     data_groups[index].append(entry)
 
 print(feature_selection(data_groups, samples_labels))
+
+
+# b) Implement a classifier system that “learns” from the Training set (1 mark). 
+# k-nn is implemneted in utils.py
+
+# c) For the first three datasets (Training, Test, and the one of MCI-labelled samples), apply the feature selection method implemented in 3 (a)
+# and use the reduced datasets to train the classifier implemented in 3(b).
+# Now calculate the performance of your classifier according to the following measures and discuss the results obtained:
+# Sensitivity (recall)
+# True positive rate (TPR) = TP / (TP + FN)
+
+# Specificity ()
+# True negative rate (TNR) = TN / (TN + FP)
+
+# Accuracy
+# (TP+TN)/(TP+TN+FP+FN)
+
+# F1-score
+# 2 / ((1 / recall) + (1 / precision))
+# TODO: Precision is 
+
+# Matthews Correlation Coefficient
+# (TP * TN - FP * FN) / sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
+
+# Youden’s J statistic (roc)
+# sensitivity + specificity - 1
+
+
+# Exercise 4) Repeat 2 and 3 with your own dataset
+# I'll be using iris dataset
+from sklearn.datasets import load_iris
+
+iris = load_iris()
+
+# Exercise 5) 
+# a) Show that a solution P = {P1, ... P4} is compatible with Incumbend, Challenger
+# P1 = 0 * 1 1 0    P2 = 1 0 1 0 0  P3 = 0 1 0 0 *  P4 = 0 * * 0 0 
+with open("USPresidency.csv", "r", encoding="utf-8") as file:
+    data = file.read()
+
+data = data.split("\n")
+us_presidency_labels = data[0].split(",")
+us_presidency = [i.split(",") for i in data[1:] if i]  # if i for removing final
+us_presidency_reduced = [[entry[4], entry[5], entry[8], entry[9], entry[12], entry[13]] for entry in us_presidency]
+us_presidency_reduced = [[int(entry) for entry in row] for row in us_presidency_reduced]
+
+def pattern_matches(pattern: List[Union[int, str]], row: List[int]) -> bool:
+    return all(pattern[j] == "*" or pattern[j] == row[j] for j in range(len(pattern)))
+
+def is_valid_pattern_set(patterns: List[List[Union[int, str]]], rows: List[List[int]]) -> bool:
+    # discovered pattern index to the class it corresponds to
+    pattern_corresponds = {}
+    # class: entry_index: applicable_pattern (-1 if none)
+    class_mappings = {}
+    for i, entry in enumerate(rows):
+        if entry[-1] not in class_mappings:
+            class_mappings[entry[-1]] = {}
+        class_mappings[entry[-1]][i] = -1
+        for j, pattern in enumerate(patterns):
+            if pattern_matches(pattern, entry):
+                class_mappings[entry[-1]][i] = j
+                if j not in pattern_corresponds:
+                    pattern_corresponds[j] = entry[-1]
+                    continue
+                if pattern_corresponds[j] != entry[-1]:
+                    # A pattern corresponds to multiple classes!
+                    return False
+    
+    # all patterns should correspond to a single class
+    # (comparing all patterns to match to the same class as the first pattern)
+    if not all(i in pattern_corresponds and pattern_corresponds[i] == pattern_corresponds[0] for i in range(len(patterns))):
+        return False
+    
+    # for the target class, all entries of that class should be covered by a pattern
+    if -1 in class_mappings[pattern_corresponds[0]].values():
+        return False
+    
+    return True
+
+patterns_provided = [
+    [0, "*", 1, 1, 0],
+    [1, 0, 1, 0, 0],
+    [0, 1, 0, 0, "*"],
+    [0, "*", "*", 0, 0],
+]
+
+print(is_valid_pattern_set(patterns_provided, us_presidency_reduced))  # True
+# b) Find your own pattern identification for L=4
+
+from utils import feature_selection
+class_one_data = [entry[:-1] for entry in us_presidency_reduced if entry[-1] == 0]
+class_two_data = [entry[:-1] for entry in us_presidency_reduced if entry[-1] == 1]
+
+print(class_one_data)
+
+print(feature_selection([class_one_data, class_two_data], [0, 1], depth_remaining=9999))
+
+
+def find_patterns(rows: List[List[int]], l: int, features: int) -> List[List[Union[int, str]]]:
+    # expects target class to be at index features
+    patterns: List[List[Union[int, str]]] = [[0] * features for _ in range(l)]
+    while not is_valid_pattern_set(patterns, rows):
+        for i in range(l):
+            for j in range(features):
+                if patterns[i][j] == 0:
+                    patterns[i][j] = 1
+                    break
+                if patterns[i][j] == 1:
+                    patterns[i][j] = "*"
+                    break
+                if patterns[i][j] == "*":
+                    patterns[i][j] = 0
+
+    return patterns
+
+print(find_patterns(us_presidency_reduced, 4, 5)) 

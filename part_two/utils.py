@@ -1,3 +1,4 @@
+import math
 from typing import Dict, List, Optional, Set, Tuple, TypeVar
 
 def jaccard_similarity(a: List[int], b: List[int]) -> float:
@@ -160,6 +161,8 @@ def write_to_matrix(matrix: List[List[T]], first: int, second: int, value: T):
 
 G = TypeVar("G", str, int)
 
+# TODO NOT SURE IF THIS SHOULD BE KEPT
+# ______________________________________________________
 def _uniquely_identifies_classes(data: List[List[List[T]]], classes: List[G], selection: Set[int]) -> bool:
     mapping = {}
     for i, group in enumerate(data):
@@ -171,8 +174,8 @@ def _uniquely_identifies_classes(data: List[List[List[T]]], classes: List[G], se
                     return False
             else:
                 mapping[key] = classes[i]
-
-    return len(mapping) == len(classes)
+    
+    return True
 
 def feature_selection(data: List[List[List[T]]], classes: List[G], current: Optional[Set[int]] = None, depth_remaining = 0) -> Set[int]:
     if current is None:
@@ -205,6 +208,134 @@ def feature_selection(data: List[List[List[T]]], classes: List[G], current: Opti
 
 
     return local_optimal
+
+# ______________________________________________________
+
+# Fayyad-Irani Discretization
+def fayyad_irani_discretization(values: List[T]) -> List[Tuple[T, T]]:
+    values.sort()
+
+    # Entropy calculation
+    def entropy(start: int, end: int) -> float:
+        counts = {}
+        for i in range(start, end):
+            if values[i] not in counts:
+                counts[values[i]] = 0
+            counts[values[i]] += 1
+        entropy = 0
+        for count in counts.values():
+            p = count / (end - start)
+            entropy -= p * math.log2(p)
+        return entropy
+    
+    # Information gain calculation
+    def information_gain(start: int, end: int, split: int) -> float:
+        total_entropy = entropy(start, end)
+        left_entropy = entropy(start, split)
+        right_entropy = entropy(split, end)
+        return total_entropy - (left_entropy + right_entropy)
+    
+    # Find the best split
+    best_split = 0
+    best_information_gain = 0
+    for i in range(1, len(values)):
+        gain = information_gain(0, len(values), i)
+        if gain > best_information_gain:
+            best_information_gain = gain
+            best_split = i
+    
+    return [(values[i], values[i+1]) for i in range(best_split)]
+
+
+def feature_selection_2(data: List[List[T]], class_mapping: Dict[int, int]) -> Set[int]:
+    return set([0])
+
+# matrix - graph matrix
+# classes - all classes
+# class_mapping - mapping from index to class (index in classes)
+# labels - labels for each node
+def k_nearest_neighbor_classification(matrix: List[List[T]], class_mapping: Dict[int, int], target: int, classses_labels: Optional[List[str]] = None, k_count: int = 3) -> List[str]:
+    if classses_labels is None:
+        # unqiue classes
+        classses_labels = [str(i) for i in set(class_mapping.values())]
+    
+    # k-nearest neighbors edge targets from target node
+    targets = []
+
+    for i, distance in enumerate(matrix[target]):
+        if i == target:
+            continue
+        # amount of nodes with smaller distance to i than j
+        smaller = 0
+        for j, other_distance in enumerate(matrix[target]):
+            if i == j or target == j:
+                continue
+            if other_distance < distance:
+                smaller += 1
+            if smaller >= k_count:
+                break
+        # if the current distance is not of the k:th smallest, there should be no edge
+        if smaller >= k_count:
+            continue
+
+        targets.append(i)
+
+    # class: count
+    neighbor_classes_count: Dict[int, int] = {}
+    for neighbor in targets:
+        neighbor_class = class_mapping[neighbor]
+        if neighbor_class not in neighbor_classes_count:
+            neighbor_classes_count[neighbor_class] = 0
+        neighbor_classes_count[neighbor_class] += 1
+
+    max_value = max(neighbor_classes_count.values())
+    max_classes = [key for key, value in neighbor_classes_count.items() if value == max_value]
+
+    return [classses_labels[class_] for class_ in max_classes]
+
+class PerformanceMeasurer:
+    def __init__(self, true_positive: int = 0, false_positive: int = 0, true_negative: int = 0, false_negative: int = 0):
+        self.true_positive = true_positive
+        self.false_positive = false_positive
+        self.true_negative = true_negative
+        self.false_negative = false_negative
+    
+    # Sensitivity (recall)
+    # True positive rate (TPR) = TP / (TP + FN)
+    def sensitivity(self) -> float:
+        return self.true_positive / (self.true_positive + self.false_negative)
+
+    # Specificity ()
+    # True negative rate (TNR) = TN / (TN + FP)
+    def specificity(self) -> float:
+        return self.true_negative / (self.true_negative + self.false_positive)
+
+    # Accuracy
+    # (TP+TN)/(TP+TN+FP+FN)
+    def accuracy(self) -> float:
+        return (self.true_positive + self.true_negative) / (self.true_positive + self.true_negative + self.false_positive + self.false_negative)
+
+    # Precision
+    # TP / (TP + FP)
+    def precision(self) -> float:
+        return self.true_positive / (self.true_positive + self.false_positive)
+
+    # F1-score
+    # 2 / ((1 / recall) + (1 / precision))
+    def f1_score(self) -> float:
+        recall = self.sensitivity()
+        precision = self.precision()
+        return 2 / ((1 / recall) + (1 / precision))
+
+    # Matthews Correlation Coefficient
+    # (TP * TN - FP * FN) / sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
+    def matthews_correlation_coefficient(self) -> float:
+        return (self.true_positive * self.true_negative - self.false_positive * self.false_negative) / (((self.true_positive + self.false_positive) * (self.true_positive + self.false_negative) * (self.true_negative + self.false_positive) * (self.true_negative + self.false_negative)) ** 0.5)
+
+    # Youden’s J statistic (roc)
+    # sensitivity + specificity - 1
+    def youdens_j_statistic(self) -> float:
+        return self.sensitivity() + self.specificity() - 1
 
 # TOOD REMOVE
 def pretty_print(matrix: List[List[T]]):
