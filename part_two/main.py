@@ -1,5 +1,5 @@
 from typing import Dict, List, Tuple, Union
-from utils import GMLBuilder, build_matrix, feature_selection, mst_prim, proteins_distance, relative_neighborhood_graph, samples_distance, write_to_matrix, pretty_print
+from utils import GMLBuilder, build_matrix, euclidean_distance, feature_selection, k_nearest_neighbor_classification, mst_prim, proteins_distance, relative_neighborhood_graph, samples_distance, write_to_matrix, pretty_print
 
 
 # 1. Perform Explanatory Data Analysis (EDA) using Students’ Academic Performance Dataset (xAPI-Edu-Data.csv)
@@ -123,11 +123,50 @@ for gender, topics in subjects_by_gender.items():
     subjects_by_gender_percentages[gender] = [(topic, count / total_by_gender[gender]) for topic, count in topics.items()]
     subjects_by_gender_percentages[gender].sort(key=lambda x: x[0])
 print(subjects_by_gender_percentages)
+# True - there is no apparant bias
 
 # 3) Girls seem to have better overall performance than boys (0.2 marks)
+# True - proportionally way more boys in the lowest and somewhat more in the medium although the same in the highest i.e. proportionally girls did better 
 # 4) Boys are generally a bit more open to discussions, visiting resources, and raising hands (0.2 marks)
-# 4) Those who participated more (higher counts in Discussion, Announcement Views, Raised Hands), usually performs better (0.2 marks)
+index_of_gender = students_academic_performance_labels.index("gender")
+index_of_discussion = students_academic_performance_labels.index("Discussion")
+index_of_visiting_resources = students_academic_performance_labels.index("VisITedResources")
+index_of_raised_hands = students_academic_performance_labels.index("raisedhands")
 
+encodings_male = encodings["gender"][0]["M"]
+students_male = [student for student in students_academic_performance_numeric if student[index_of_gender] == encodings_male]
+students_female = [student for student in students_academic_performance_numeric if student[index_of_gender] != encodings_male]
+
+discussion_male = sum(student[index_of_discussion] for student in students_male) / len(students_male)
+discussion_female = sum(student[index_of_discussion] for student in students_female) / len(students_female)
+
+visiting_resources_male = sum(student[index_of_visiting_resources] for student in students_male) / len(students_male)
+visiting_resources_female = sum(student[index_of_visiting_resources] for student in students_female) / len(students_female)
+
+raised_hands_male = sum(student[index_of_raised_hands] for student in students_male) / len(students_male)
+raised_hands_female = sum(student[index_of_raised_hands] for student in students_female) / len(students_female)
+
+print("4")
+print(discussion_male, visiting_resources_male, raised_hands_male)
+print(discussion_female, visiting_resources_female, raised_hands_female)
+print(discussion_male, discussion_female, visiting_resources_male, visiting_resources_female, raised_hands_male, raised_hands_female)
+# Female has higher in all three, so False
+
+# 5) Those who participated more (higher counts in Discussion, Announcement Views, Raised Hands), usually performs better (0.2 marks)
+index_of_announcement_views = students_academic_performance_labels.index("AnnouncementsView")
+for performance in ["L", "M", "H"]:
+    index_of_performance = students_academic_performance_labels.index("Class")
+    performance_encodings = encodings["Class"][0][performance]
+    students_performance = [student for student in students_academic_performance_numeric if student[index_of_performance] == performance_encodings]
+    discussion_performance = sum(student[index_of_discussion] for student in students_performance) / len(students_performance)
+    announcement_views_performance = sum(student[index_of_announcement_views] for student in students_performance) / len(students_performance)
+    raised_hands_performance = sum(student[index_of_raised_hands] for student in students_performance) / len(students_performance)
+    print(performance, discussion_performance, announcement_views_performance, raised_hands_performance)
+
+# L 30.834645669291337 15.5748031496063 16.88976377952756
+# M 43.791469194312796 40.96208530805687 48.93838862559242
+# H 53.66197183098591 53.38028169014085 70.28873239436619
+# True :)
 
 # Exercise 2 (3 marks). Using the “Training” set of the Alzheimer’s Disease3 dataset, you will need to find several proximity graphs: 
 # a) Minimum Spanning Tree (MST) for samples (0.5 marks)
@@ -158,7 +197,7 @@ proteins: List[Tuple[str, List[float]]] = [(entry[0], [float(i) for i in entry[1
 proteins_labels = [entry[0] for entry in proteins]
 proteins_data = [entry[1] for entry in proteins]
 
-proteins_matrix = build_matrix(len(proteins_data))
+proteins_matrix = build_matrix(len(proteins_data), default=0.0)
 
 for i, sample in enumerate(proteins_data):
     for j, sample2 in enumerate(proteins_data):
@@ -182,18 +221,98 @@ alzheimers_proteins_rng.write()
 # Exercise 3 (3 marks). Using the Alzheimer’s Disease Training dataset:
 # a) Implement a feature selection technique that selects a subset of features (from the total of 120 measured proteins) (1 mark). 
 
+# To make feature selection easier I'll be converting all the floats to ordered ints
+samples_data_normalized: List[List[int]] = [[0 for _ in range(len(samples_data[0]))] for _ in range(len(samples_data))]
+number_of_buckets = 4
+for column in range(len(samples_data[0])):
+    sorted_data = sorted([entry[column] for entry in samples_data])
+    # split into n buckets
+    buckets = [sorted_data[int(len(sorted_data) * i / number_of_buckets)] for i in range(1, number_of_buckets)]
+    for i, row in enumerate(samples_data):
+        bucket = 0
+        if row[column] < buckets[0]:
+            bucket = 0
+        elif row[column] < buckets[1]:
+            bucket = 1
+        elif row[column] < buckets[2]:
+            bucket = 2
+        else:
+            bucket = 3
+
+        samples_data_normalized[i][column] = bucket
+
+        # row[column] = bucket
+    # mean = sum(entry[column] for entry in samples_data) / len(samples_data)
+    # for row in range(len(samples_data)):
+        # samples_data_normalized[row][column] = 1 if samples_data[row][column] >= mean else 0
+
+print(samples_data_normalized[0])
+
 # AD and NDC
 labels = ["AD", "NDC"]
 data_groups = [[], []]
-for i, entry in enumerate(samples_data):
+for i, entry in enumerate(samples_data_normalized):
     index = 0 if samples_labels[i].startswith("AD") else 1
     data_groups[index].append(entry)
 
-print(feature_selection(data_groups, samples_labels))
+# Attempt 1
+selection = feature_selection(data_groups, labels, depth_remaining=0)
+print(selection) # {104, 105, 108, 110, 112, 113, 116, 117, 119} i.e. not a good selection :(
+# print(feature_selection(data_groups, samples_labels, depth_remaining=1))
+
+# Attempt 2
+# Checking pearson correlation for each feature and the class
+correlations = []
+print(samples_data_normalized[0])
+for i in range(len(samples_data_normalized[0])):
+    flattend = [int(entry[i]) for entry in samples_data_normalized]
+    pearson = pearson_correlation(flattend, [0 if label.startswith("AD") else 1 for label in samples_labels])
+    correlations.append((i, pearson, proteins_labels[i]))
+
+cut_off = 0.3
+correlations = [correlation for correlation in correlations if abs(correlation[1]) > cut_off]
+
+correlations.sort(key=lambda x: abs(x[1]), reverse=True)
+
+print(len(correlations), correlations) # 14 features with correlation > 0.3
+
+selection = set([correlation[0] for correlation in correlations])
+
+def reduce_data(data: List[List[int]], selection: set) -> List[List[int]]:
+    return [[entry[i] for i in selection] for entry in data]
+
+print(samples_data_normalized[0])
+samples_data_reduced = reduce_data(samples_data_normalized, selection)
+print(samples_data_reduced[0])
 
 
 # b) Implement a classifier system that “learns” from the Training set (1 mark). 
 # k-nn is implemneted in utils.py
+samples_data_reduced_matrix = build_matrix(len(samples_data_reduced))
+for i, sample in enumerate(samples_data_reduced):
+    for j, sample2 in enumerate(samples_data_reduced):
+        write_to_matrix(samples_data_reduced_matrix, i, j, euclidean_distance(list(sample), list(sample2)))
+
+# copy of the pre computed matrix but with an additional column for the new entry
+classification_matrix = build_matrix(len(samples_data_reduced) + 1)
+for i, column in enumerate(samples_data_reduced_matrix):
+    for j, value in enumerate(column):
+        write_to_matrix(classification_matrix, i, j, value)
+
+class_mapping = {}
+for i, data in enumerate(samples_data_reduced):
+    class_mapping[i] = 0 if samples_labels[i].startswith("AD") else 1
+
+def set_sample(samples_data: List[List[int]], classification_matrix, sample: List[int]):
+    # last index in classification_matrix is used
+    for i, value in enumerate(samples_data):
+        write_to_matrix(classification_matrix, len(samples_data), i, euclidean_distance(value, sample))
+
+def classify(sample: List[int]) -> int:
+    set_sample(samples_data_reduced, classification_matrix, sample)
+    return k_nearest_neighbor_classification(classification_matrix, class_mapping, len(samples_data_reduced), k_count=3)[0]
+
+print(classify(samples_data_reduced[0]))  # 1, obviously...
 
 # c) For the first three datasets (Training, Test, and the one of MCI-labelled samples), apply the feature selection method implemented in 3 (a)
 # and use the reduced datasets to train the classifier implemented in 3(b).
@@ -209,7 +328,6 @@ print(feature_selection(data_groups, samples_labels))
 
 # F1-score
 # 2 / ((1 / recall) + (1 / precision))
-# TODO: Precision is 
 
 # Matthews Correlation Coefficient
 # (TP * TN - FP * FN) / sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
@@ -305,4 +423,4 @@ def find_patterns(rows: List[List[int]], l: int, features: int) -> List[List[Uni
 
     return patterns
 
-print(find_patterns(us_presidency_reduced, 4, 5)) 
+# print(find_patterns(us_presidency_reduced, 4, 5)) 

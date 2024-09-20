@@ -82,6 +82,9 @@ def samples_distance(a: List[float], b: List[float]) -> float:
     # TODO: Use something else?
     return proteins_distance(a, b)
 
+def euclidean_distance(a: List[int], b: List[int]) -> float:
+    return math.sqrt(sum([(a[i] - b[i]) ** 2 for i in range(len(a))]))
+
 def mst_prim(matrix: List[List[T]], builder: GMLBuilder, labels: Optional[List[str]] = None) -> None:
     if labels is None:
         labels = [str(i) for i in range(len(matrix))]
@@ -192,7 +195,7 @@ def feature_selection(data: List[List[List[T]]], classes: List[G], current: Opti
         if not _uniquely_identifies_classes(data, classes, new_current):
             continue
 
-        print(f"Removing {val} results in a valid selection, {len(new_current)} features left")
+        # print(f"Removing {val} results in a valid selection, {len(new_current)} features left")
 
         # So - for a perfect selection, we should try all possible combinations
         # as keeping this featurem might lead to a better selection later on
@@ -254,11 +257,7 @@ def feature_selection_2(data: List[List[T]], class_mapping: Dict[int, int]) -> S
 # classes - all classes
 # class_mapping - mapping from index to class (index in classes)
 # labels - labels for each node
-def k_nearest_neighbor_classification(matrix: List[List[T]], class_mapping: Dict[int, int], target: int, classses_labels: Optional[List[str]] = None, k_count: int = 3) -> List[str]:
-    if classses_labels is None:
-        # unqiue classes
-        classses_labels = [str(i) for i in set(class_mapping.values())]
-    
+def k_nearest_neighbor_classification(matrix: List[List[T]], class_mapping: Dict[int, int], target: int, k_count: int = 3) -> List[int]:
     # k-nearest neighbors edge targets from target node
     targets = []
 
@@ -291,7 +290,7 @@ def k_nearest_neighbor_classification(matrix: List[List[T]], class_mapping: Dict
     max_value = max(neighbor_classes_count.values())
     max_classes = [key for key, value in neighbor_classes_count.items() if value == max_value]
 
-    return [classses_labels[class_] for class_ in max_classes]
+    return max_classes
 
 class PerformanceMeasurer:
     def __init__(self, true_positive: int = 0, false_positive: int = 0, true_negative: int = 0, false_negative: int = 0):
