@@ -1,5 +1,5 @@
 from typing import Dict, List, Tuple, Union
-from utils import GMLBuilder, build_matrix, euclidean_distance, feature_selection, k_nearest_neighbor_classification, mst_prim, proteins_distance, relative_neighborhood_graph, samples_distance, write_to_matrix, pretty_print
+from utils import GMLBuilder, PerformanceMeasurer, build_matrix, euclidean_distance, feature_selection, k_nearest_neighbor_classification, mst_prim, proteins_distance, relative_neighborhood_graph, samples_distance, write_to_matrix, pretty_print
 
 
 # 1. Perform Explanatory Data Analysis (EDA) using Students’ Academic Performance Dataset (xAPI-Edu-Data.csv)
@@ -224,10 +224,13 @@ alzheimers_proteins_rng.write()
 # To make feature selection easier I'll be converting all the floats to ordered ints
 samples_data_normalized: List[List[int]] = [[0 for _ in range(len(samples_data[0]))] for _ in range(len(samples_data))]
 number_of_buckets = 4
+# feature: List[float] (lower bounds)
+buckets_mapping: Dict[int, List[float]] = {}
 for column in range(len(samples_data[0])):
     sorted_data = sorted([entry[column] for entry in samples_data])
     # split into n buckets
-    buckets = [sorted_data[int(len(sorted_data) * i / number_of_buckets)] for i in range(1, number_of_buckets)]
+    buckets = [sorted_data[int(len(sorted_data) * i / number_of_buckets)] for i in range(0, number_of_buckets)]
+    buckets_mapping[column] = buckets
     for i, row in enumerate(samples_data):
         bucket = 0
         if row[column] < buckets[0]:
@@ -241,10 +244,8 @@ for column in range(len(samples_data[0])):
 
         samples_data_normalized[i][column] = bucket
 
-        # row[column] = bucket
-    # mean = sum(entry[column] for entry in samples_data) / len(samples_data)
-    # for row in range(len(samples_data)):
-        # samples_data_normalized[row][column] = 1 if samples_data[row][column] >= mean else 0
+print("E")
+print(buckets_mapping)
 
 print(samples_data_normalized[0])
 
@@ -252,7 +253,7 @@ print(samples_data_normalized[0])
 labels = ["AD", "NDC"]
 data_groups = [[], []]
 for i, entry in enumerate(samples_data_normalized):
-    index = 0 if samples_labels[i].startswith("AD") else 1
+    index = 1 if samples_labels[i].startswith("AD") else 0
     data_groups[index].append(entry)
 
 # Attempt 1
@@ -266,7 +267,7 @@ correlations = []
 print(samples_data_normalized[0])
 for i in range(len(samples_data_normalized[0])):
     flattend = [int(entry[i]) for entry in samples_data_normalized]
-    pearson = pearson_correlation(flattend, [0 if label.startswith("AD") else 1 for label in samples_labels])
+    pearson = pearson_correlation(flattend, [1 if label.startswith("AD") else 0 for label in samples_labels])
     correlations.append((i, pearson, proteins_labels[i]))
 
 cut_off = 0.3
@@ -301,7 +302,7 @@ for i, column in enumerate(samples_data_reduced_matrix):
 
 class_mapping = {}
 for i, data in enumerate(samples_data_reduced):
-    class_mapping[i] = 0 if samples_labels[i].startswith("AD") else 1
+    class_mapping[i] = 1 if samples_labels[i].startswith("AD") else 0
 
 def set_sample(samples_data: List[List[int]], classification_matrix, sample: List[int]):
     # last index in classification_matrix is used
@@ -312,28 +313,121 @@ def classify(sample: List[int]) -> int:
     set_sample(samples_data_reduced, classification_matrix, sample)
     return k_nearest_neighbor_classification(classification_matrix, class_mapping, len(samples_data_reduced), k_count=3)[0]
 
-print(classify(samples_data_reduced[0]))  # 1, obviously...
+print("Classifying first sample in training")
+print(classify(samples_data_reduced[0]), class_mapping[0])
 
 # c) For the first three datasets (Training, Test, and the one of MCI-labelled samples), apply the feature selection method implemented in 3 (a)
 # and use the reduced datasets to train the classifier implemented in 3(b).
+with open("alzheimers_disease/test_set_ad.csv", "r", encoding="utf-8") as file:
+    test_ad = file.read()
+    # I will be classifying all non-ad as NDC and ignore classification between NDC and OD
+
+test_ad = test_ad.split("\n")
+test_ad_header = test_ad[0].split(",")
+test_ad_entries = [i.split(",") for i in test_ad[1:] if i]  # if i for removing final empty
+
+# samples are the columns
+test_ad_labels = [f"{label}-{i}" for i, label in enumerate(test_ad_header[1:])]
+test_ad_data = [[float(entry[i+1]) for entry in test_ad_entries] for i in range(len(test_ad_labels))]
+
+# normalize
+test_ad_data_normalized = [[0 for _ in range(len(test_ad_data[0]))] for _ in range(len(test_ad_data))]
+for i, sample in enumerate(test_ad_data):
+    for j, value in enumerate(sample):
+        bucket = 0
+        if value < buckets_mapping[j][0]:
+            bucket = 0
+        elif value < buckets_mapping[j][1]:
+            bucket = 1
+        elif value < buckets_mapping[j][2]:
+            bucket = 2
+        else:
+            bucket = 3
+
+        test_ad_data_normalized[i][j] = bucket
+
+test_ad_data_reduced = reduce_data(test_ad_data_normalized, selection)
+test_ad_actual_classes = [1 if label.startswith("AD") else 0 for label in test_ad_labels]
+
+with open("alzheimers_disease/test_set_mci.csv", "r", encoding="utf-8") as file:
+    test_mci = file.read()
+    # I'll be using follow up as the target class
+
+test_mci = test_mci.split("\n")
+# I'm skipping the first row since its the "class" but for this dataset we only care about the follow up
+test_mci_header = test_mci[1].split(",")
+test_mci_entries = [i.split(",") for i in test_mci[2:] if i]  # if i for removing final empty
+
+# samples are the columns
+test_mci_labels = [f"{label}-{i}" for i, label in enumerate(test_mci_header[1:])]
+test_mci_data = [[float(entry[i+1]) for entry in test_mci_entries] for i in range(len(test_mci_labels))]
+
+# normalize
+test_mci_data_normalized = [[0 for _ in range(len(test_mci_data[0]))] for _ in range(len(test_mci_data))]
+for i, sample in enumerate(test_mci_data):
+    for j, value in enumerate(sample):
+        bucket = 0
+        if value < buckets_mapping[j][0]:
+            bucket = 0
+        elif value < buckets_mapping[j][1]:
+            bucket = 1
+        elif value < buckets_mapping[j][2]:
+            bucket = 2
+        else:
+            bucket = 3
+
+        test_mci_data_normalized[i][j] = bucket
+
+test_mci_data_reduced = reduce_data(test_mci_data_normalized, selection)
+test_mci_actual_classes = [1 if label.startswith("AD") else 0 for label in test_mci_labels]
+
 # Now calculate the performance of your classifier according to the following measures and discuss the results obtained:
+true_positives = 0
+true_negatives = 0
+false_positives = 0
+false_negatives = 0
+
+# combining the test sets and then iterating over them
+for sample, actual_class in zip(test_ad_data_reduced + test_mci_data_reduced, test_ad_actual_classes + test_mci_actual_classes):
+    classification = classify(sample)
+    if classification == actual_class:
+        if actual_class == 1:
+            true_positives += 1
+        else:
+            true_negatives += 1
+    else:
+        if actual_class == 1:
+            false_negatives += 1
+        else:
+            false_positives += 1
+
+results = PerformanceMeasurer(true_positives, false_positives, true_negatives, false_negatives)
+
+print("Results")
+
 # Sensitivity (recall)
 # True positive rate (TPR) = TP / (TP + FN)
+print(results.sensitivity())
 
 # Specificity ()
 # True negative rate (TNR) = TN / (TN + FP)
+print(results.specificity())
 
 # Accuracy
 # (TP+TN)/(TP+TN+FP+FN)
+print(results.accuracy())
 
 # F1-score
 # 2 / ((1 / recall) + (1 / precision))
+print(results.f1_score())
 
 # Matthews Correlation Coefficient
 # (TP * TN - FP * FN) / sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
+print(results.matthews_correlation_coefficient())
 
 # Youden’s J statistic (roc)
 # sensitivity + specificity - 1
+print(results.youdens_j_statistic())
 
 
 # Exercise 4) Repeat 2 and 3 with your own dataset
