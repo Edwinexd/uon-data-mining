@@ -304,17 +304,17 @@ class_mapping = {}
 for i, data in enumerate(samples_data_reduced):
     class_mapping[i] = 1 if samples_labels[i].startswith("AD") else 0
 
-def set_sample(samples_data: List[List[int]], classification_matrix, sample: List[int]):
+def set_sample(samples_data: List[List[int]], classification_matrix: List[List[int]], sample: List[int]):
     # last index in classification_matrix is used
     for i, value in enumerate(samples_data):
         write_to_matrix(classification_matrix, len(samples_data), i, euclidean_distance(value, sample))
 
-def classify(sample: List[int]) -> int:
-    set_sample(samples_data_reduced, classification_matrix, sample)
-    return k_nearest_neighbor_classification(classification_matrix, class_mapping, len(samples_data_reduced), k_count=3)[0]
+def classify(data_reduced: List[List[int]], classification_matrix: List[List[int]], class_mapping: Dict[int, int], sample: List[int]) -> int:
+    set_sample(data_reduced, classification_matrix, sample)
+    return k_nearest_neighbor_classification(classification_matrix, class_mapping, len(data_reduced), k_count=3)[0]
 
 print("Classifying first sample in training")
-print(classify(samples_data_reduced[0]), class_mapping[0])
+print(classify(samples_data_reduced, classification_matrix, class_mapping, samples_data_reduced[0]), class_mapping[0])
 
 # c) For the first three datasets (Training, Test, and the one of MCI-labelled samples), apply the feature selection method implemented in 3 (a)
 # and use the reduced datasets to train the classifier implemented in 3(b).
@@ -389,7 +389,7 @@ false_negatives = 0
 
 # combining the test sets and then iterating over them
 for sample, actual_class in zip(test_ad_data_reduced + test_mci_data_reduced, test_ad_actual_classes + test_mci_actual_classes):
-    classification = classify(sample)
+    classification = classify(samples_data_reduced, classification_matrix, class_mapping, sample)
     if classification == actual_class:
         if actual_class == 1:
             true_positives += 1
@@ -403,7 +403,7 @@ for sample, actual_class in zip(test_ad_data_reduced + test_mci_data_reduced, te
 
 results = PerformanceMeasurer(true_positives, false_positives, true_negatives, false_negatives)
 
-print("Results")
+print("Results Alzheimer's Dataset")
 
 # Sensitivity (recall)
 # True positive rate (TPR) = TP / (TP + FN)
@@ -435,6 +435,148 @@ print(results.youdens_j_statistic())
 from sklearn.datasets import load_iris
 
 iris = load_iris()
+print(iris)
+# pylint complains about iris typing from sklearn but this is fine
+# pylance also has complaints hence the type ignore-s
+# pylint: disable=no-member
+iris_data: List[List[float]] = [list(i) for i in iris.data] # type: ignore
+iris_labels: List[int] = list(iris.target) # type: ignore
+# pylint: disable=no-member
+iris_labels_names: List[str] = [iris.target_names[i] for i in iris_labels] # type: ignore
+
+# and for 2 b and d
+iris_features = [[entry[i] for entry in iris_data] for i in range(len(iris_data[0]))]
+
+# 2a (mst for entries)
+iris_matrix = build_matrix(len(iris_data))
+for i, sample in enumerate(iris_data):
+    for j, sample2 in enumerate(iris_data):
+        # samples distance is chebyshev distance which I consider ok for this
+        write_to_matrix(iris_matrix, i, j, samples_distance(sample, sample2))
+
+iris_mst = GMLBuilder("iris_mst.gml")
+mst_prim(iris_matrix, iris_mst, iris_labels_names)
+iris_mst.write()
+
+# 2b (mst for features)
+# not really interesting since there are only 4 features in iris dataset
+iris_features_matrix = build_matrix(len(iris_features))
+for i, sample in enumerate(iris_features):
+    for j, sample2 in enumerate(iris_features):
+        write_to_matrix(iris_features_matrix, i, j, samples_distance(sample, sample2))
+
+iris_features_mst = GMLBuilder("iris_features_mst.gml")
+mst_prim(iris_features_matrix, iris_features_mst, [f"Feature-{i}" for i in range(len(iris_features))])
+iris_features_mst.write()
+
+# 2c (rng for entries)
+iris_rng = GMLBuilder("iris_rng.gml")
+relative_neighborhood_graph(iris_matrix, iris_rng, iris_labels_names)
+iris_rng.write()
+
+# 2d (rng for features)
+iris_features_rng = GMLBuilder("iris_features_rng.gml")
+relative_neighborhood_graph(iris_features_matrix, iris_features_rng, [f"Feature-{i}" for i in range(len(iris_features))])
+iris_features_rng.write()
+
+
+# 3a (feature selection)
+
+# normalizing the floats to ints
+iris_data_normalized: List[List[int]] = [[0 for _ in range(len(iris_data[0]))] for _ in range(len(iris_data))]
+number_of_buckets = 4
+# feature: List[float] (lower bounds)
+buckets_mapping: Dict[int, List[float]] = {}
+for column in range(len(iris_data[0])):
+    sorted_data = sorted([entry[column] for entry in iris_data])
+    # split into n buckets
+    buckets = [sorted_data[int(len(sorted_data) * i / number_of_buckets)] for i in range(0, number_of_buckets)]
+    buckets_mapping[column] = buckets
+    for i, row in enumerate(iris_data):
+        bucket = 0
+        if row[column] < buckets[0]:
+            bucket = 0
+        elif row[column] < buckets[1]:
+            bucket = 1
+        elif row[column] < buckets[2]:
+            bucket = 2
+        else:
+            bucket = 3
+
+        iris_data_normalized[i][column] = bucket
+
+
+# apply correlation-based feature selection
+correlations = []
+for i in range(len(iris_data_normalized[0])):
+    flattend = [int(entry[i]) for entry in iris_data_normalized]
+    pearson = pearson_correlation(flattend, iris_labels)
+    correlations.append((i, pearson, f"Feature-{i}"))
+
+cut_off = 0.3
+correlations = [correlation for correlation in correlations if abs(correlation[1]) > cut_off]
+
+correlations.sort(key=lambda x: abs(x[1]), reverse=True)
+
+print(len(correlations), correlations) # 3 features (0,2,3) all have high correlation
+# [(2, 0.8598562065918868, 'Feature-2'), (3, 0.833113617831571, 'Feature-3'), (0, 0.7470009847411124, 'Feature-0')]
+
+selection = set([correlation[0] for correlation in correlations])
+iris_data_reduced = reduce_data(iris_data_normalized, selection)
+
+# 3b (classifier)
+# I'm splitting the data into training and test sets (70/30 split)
+from random import shuffle
+
+combined = list(zip(iris_data_reduced, iris_labels))
+shuffle(combined)
+number_training = int(len(combined) * 0.7)
+training = combined[:number_training]
+test = combined[number_training:]
+
+training_data, training_labels = ([entry[0] for entry in training], [entry[1] for entry in training])
+test_data, test_labels = ([entry[0] for entry in test], [entry[1] for entry in test])
+
+training_matrix = build_matrix(len(training_data) + 1)
+for i, column in enumerate(training_data):
+    for j, value in enumerate(column):
+        write_to_matrix(training_matrix, i, j, value)
+
+class_mapping = {i: label for i, label in enumerate(training_labels)}
+
+# sanity check
+print(classify(training_data, training_matrix, class_mapping, test_data[0]), test_labels[0]) # should be the same
+
+# 3c (performance)
+true_positives = 0
+true_negatives = 0
+false_positives = 0
+false_negatives = 0
+
+for sample, actual_class in zip(test_data, test_labels):
+    classification = classify(training_data, training_matrix, class_mapping, sample)
+    if classification == actual_class:
+        if actual_class == 1:
+            true_positives += 1
+        else:
+            true_negatives += 1
+    else:
+        if actual_class == 1:
+            false_negatives += 1
+        else:
+            false_positives += 1
+
+results = PerformanceMeasurer(true_positives, false_positives, true_negatives, false_negatives)
+
+print("Results Iris Dataset")
+print(results.sensitivity())
+print(results.specificity())
+print(results.accuracy())
+print(results.f1_score())
+print(results.matthews_correlation_coefficient())
+print(results.youdens_j_statistic())
+
+print("Conclusion: very bad results ")
 
 # Exercise 5) 
 # a) Show that a solution P = {P1, ... P4} is compatible with Incumbend, Challenger
@@ -490,31 +632,15 @@ patterns_provided = [
 
 print(is_valid_pattern_set(patterns_provided, us_presidency_reduced))  # True
 # b) Find your own pattern identification for L=4
+# targetting the challenger class
+my_patterns = [
+    # for 1960, all zeros except for q12 which is similar to 1928 which is all zeros
+    # the only q12 with incumbent also has q5 as 1
+    # so:
+    [1, "*", 0, "*", "*"],
+    ["*", "*", "*", 1, 1],
+    [0, 0, 0, 0, 1],
+    [1, 0, 1, 1, 0]
+]
 
-from utils import feature_selection
-class_one_data = [entry[:-1] for entry in us_presidency_reduced if entry[-1] == 0]
-class_two_data = [entry[:-1] for entry in us_presidency_reduced if entry[-1] == 1]
-
-print(class_one_data)
-
-print(feature_selection([class_one_data, class_two_data], [0, 1], depth_remaining=9999))
-
-
-def find_patterns(rows: List[List[int]], l: int, features: int) -> List[List[Union[int, str]]]:
-    # expects target class to be at index features
-    patterns: List[List[Union[int, str]]] = [[0] * features for _ in range(l)]
-    while not is_valid_pattern_set(patterns, rows):
-        for i in range(l):
-            for j in range(features):
-                if patterns[i][j] == 0:
-                    patterns[i][j] = 1
-                    break
-                if patterns[i][j] == 1:
-                    patterns[i][j] = "*"
-                    break
-                if patterns[i][j] == "*":
-                    patterns[i][j] = 0
-
-    return patterns
-
-# print(find_patterns(us_presidency_reduced, 4, 5)) 
+print(is_valid_pattern_set(my_patterns, us_presidency_reduced))  # True
