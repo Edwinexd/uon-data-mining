@@ -1,16 +1,6 @@
 import math
 from typing import Dict, List, Optional, Set, Tuple, TypeVar
 
-def jaccard_similarity(a: List[int], b: List[int]) -> float:
-    intersection = 0
-    union = 0
-    for i, num in enumerate(a):
-        if num == 1 and b[i] == 1:
-            intersection += 1
-        if num == 1 or b[i] == 1:
-            union += 1
-    return intersection / union
-
 class GMLBuilder:
     def __init__(self, path: str):
         self.path = path
@@ -71,16 +61,8 @@ class GMLBuilder:
 
 T = TypeVar("T", int, float)
 
-def proteins_distance(a: List[float], b: List[float]) -> float:
-    # Chebyshev distance
+def chebyshev_distance(a: List[T], b: List[T]) -> float:
     return max([abs(a[i] - b[i]) for i in range(len(a))])
-    # import numpy as np
-    # # cosine similarity => distance
-    # return 1 - np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
-
-def samples_distance(a: List[float], b: List[float]) -> float:
-    # TODO: Use something else?
-    return proteins_distance(a, b)
 
 def euclidean_distance(a: List[int], b: List[int]) -> float:
     return math.sqrt(sum([(a[i] - b[i]) ** 2 for i in range(len(a))]))
@@ -128,33 +110,6 @@ def relative_neighborhood_graph(matrix: List[List[T]], builder: GMLBuilder, labe
 
             builder.add_edge(i, j)
 
-def k_nearest_neighbor_graph(matrix: List[List[T]], builder: GMLBuilder, labels: Optional[List[str]] = None, k_count: int = 2) -> None:
-    if labels is None:
-        labels = [str(i) for i in range(len(matrix))]
-    for i, label in enumerate(labels):
-        builder.add_node(i, label)
-
-    for i, row in enumerate(matrix):
-        connected_to = []
-        for j, distance in enumerate(row):
-            if i == j:
-                continue
-            # amount of nodes with smaller distance to i than j
-            smaller = 0
-            for k, other_distance in enumerate(row):
-                if i == k or j == k:
-                    continue
-                if other_distance < distance:
-                    smaller += 1
-                if smaller >= k_count:
-                    break
-            # if the current distance is not of the k:th smallest, there should be no edge
-            if smaller >= k_count:
-                continue
-            
-            builder.add_edge(i, j)
-            connected_to.append((labels[j], distance))        
-
 def build_matrix(size: int, default: T = -1) -> List[List[T]]:
     return [[default for _ in range(size)] for _ in range(size)]
 
@@ -162,105 +117,12 @@ def write_to_matrix(matrix: List[List[T]], first: int, second: int, value: T):
     matrix[first][second] = value
     matrix[second][first] = value
 
-G = TypeVar("G", str, int)
-
-# TODO NOT SURE IF THIS SHOULD BE KEPT
-# ______________________________________________________
-def _uniquely_identifies_classes(data: List[List[List[T]]], classes: List[G], selection: Set[int]) -> bool:
-    mapping = {}
-    for i, group in enumerate(data):
-        for entry in group:
-            key = tuple(val for j, val in enumerate(entry) if j in selection)
-            if key in mapping:
-                if mapping[key] != classes[i]:
-                    print(f"Key {key} maps to both {mapping[key]} and {classes[i]}")
-                    return False
-            else:
-                mapping[key] = classes[i]
-    
-    return True
-
-def feature_selection(data: List[List[List[T]]], classes: List[G], current: Optional[Set[int]] = None, depth_remaining = 0) -> Set[int]:
-    if current is None:
-        current = set(range(len(data[0][0])))
-        assert _uniquely_identifies_classes(data, classes, current), "Even initial selection does not uniquely identify classes!"
-
-    # try removing each feature
-    # call recursively
-    local_optimal = current.copy()
-    for val in current:
-        new_current = current.copy()
-        new_current.remove(val)
-
-        if not _uniquely_identifies_classes(data, classes, new_current):
-            continue
-
-        # print(f"Removing {val} results in a valid selection, {len(new_current)} features left")
-
-        # So - for a perfect selection, we should try all possible combinations
-        # as keeping this featurem might lead to a better selection later on
-        # this is not feasible so I'm using a heurustic 
-        # approach and accepting results of a single removal
-        maybe_local_optimal = feature_selection(data, classes, new_current, depth_remaining-1)
-        if len(maybe_local_optimal) < len(local_optimal):
-            local_optimal = maybe_local_optimal
-
-        # Heuristic if we have more depth we go
-        if depth_remaining < 1:
-            break
-
-
-    return local_optimal
-
-# ______________________________________________________
-
-# Fayyad-Irani Discretization
-def fayyad_irani_discretization(values: List[T]) -> List[Tuple[T, T]]:
-    values.sort()
-
-    # Entropy calculation
-    def entropy(start: int, end: int) -> float:
-        counts = {}
-        for i in range(start, end):
-            if values[i] not in counts:
-                counts[values[i]] = 0
-            counts[values[i]] += 1
-        entropy = 0
-        for count in counts.values():
-            p = count / (end - start)
-            entropy -= p * math.log2(p)
-        return entropy
-    
-    # Information gain calculation
-    def information_gain(start: int, end: int, split: int) -> float:
-        total_entropy = entropy(start, end)
-        left_entropy = entropy(start, split)
-        right_entropy = entropy(split, end)
-        return total_entropy - (left_entropy + right_entropy)
-    
-    # Find the best split
-    best_split = 0
-    best_information_gain = 0
-    for i in range(1, len(values)):
-        gain = information_gain(0, len(values), i)
-        if gain > best_information_gain:
-            best_information_gain = gain
-            best_split = i
-    
-    return [(values[i], values[i+1]) for i in range(best_split)]
-
-
-def feature_selection_2(data: List[List[T]], class_mapping: Dict[int, int]) -> Set[int]:
-    return set([0])
-
-# matrix - graph matrix
-# classes - all classes
-# class_mapping - mapping from index to class (index in classes)
-# labels - labels for each node
 def k_nearest_neighbor_classification(matrix: List[List[T]], class_mapping: Dict[int, int], target: int, k_count: int = 3) -> List[int]:
     # k-nearest neighbors edge targets from target node
     targets = []
 
+    # Note: This implementation of k-NN may connect more than k-edges to vertices.
+    # E.x. [0,3,3,3,3,4] the 0 and all the 3s will be included as all 3:s are considered 2:nd lowest weight.
     for i, distance in enumerate(matrix[target]):
         if i == target:
             continue
@@ -335,13 +197,3 @@ class PerformanceMeasurer:
     # sensitivity + specificity - 1
     def youdens_j_statistic(self) -> float:
         return self.sensitivity() + self.specificity() - 1
-
-# TOOD REMOVE
-def pretty_print(matrix: List[List[T]]):
-    for row in matrix:
-        for x in row:
-            if (isinstance(x, float)):
-                print(f"{x:.2f}".ljust(4), end=" ")
-            else:
-                print(str(x).ljust(2), end=" ")
-        print()

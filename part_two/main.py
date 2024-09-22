@@ -1,5 +1,5 @@
 from typing import Dict, List, Tuple, Union
-from utils import GMLBuilder, PerformanceMeasurer, build_matrix, euclidean_distance, feature_selection, k_nearest_neighbor_classification, mst_prim, proteins_distance, relative_neighborhood_graph, samples_distance, write_to_matrix, pretty_print
+from utils import GMLBuilder, PerformanceMeasurer, build_matrix, chebyshev_distance, euclidean_distance, k_nearest_neighbor_classification, mst_prim, relative_neighborhood_graph, write_to_matrix
 
 
 # 1. Perform Explanatory Data Analysis (EDA) using Students’ Academic Performance Dataset (xAPI-Edu-Data.csv)
@@ -11,16 +11,13 @@ data = data.split("\n")
 students_academic_performance_labels = data[0].split(",")
 students_academic_performance = [i.split(",") for i in data[1:] if i]  # if i for removing final empty line
 
-# Sanity check
-print(len(students_academic_performance))
-
 # Pearson requires numerical data
 # encoding categorical data (I'm not taking into account ordinality of )
 # label: (encodings, next number)
 encodings: Dict[str, Tuple[Dict[str, int], int]] = {}
 
 for i, label in enumerate(students_academic_performance_labels):
-    if students_academic_performance[0][i].isnumeric():  # if it's a number, we don't need it
+    if students_academic_performance[0][i].isnumeric():  # if it's a number, we don't need to convert it
         continue
 
     encodings[label] = ({}, 0)
@@ -46,7 +43,6 @@ students_academic_performance_numeric = [[int(i) for i in student] for student i
 def pearson_correlation(x: List[int], y: List[int]) -> float:
     assert len(x) == len(y), "Entries must have same length"
     count = len(x)
-    # TODO: Does mean make sense for categorical data?
     mean_of_x = sum(x) / count
     mean_of_y = sum(y) / count
 
@@ -146,7 +142,6 @@ visiting_resources_female = sum(student[index_of_visiting_resources] for student
 raised_hands_male = sum(student[index_of_raised_hands] for student in students_male) / len(students_male)
 raised_hands_female = sum(student[index_of_raised_hands] for student in students_female) / len(students_female)
 
-print("4")
 print(discussion_male, visiting_resources_male, raised_hands_male)
 print(discussion_female, visiting_resources_female, raised_hands_female)
 print(discussion_male, discussion_female, visiting_resources_male, visiting_resources_female, raised_hands_male, raised_hands_female)
@@ -166,7 +161,7 @@ for performance in ["L", "M", "H"]:
 # L 30.834645669291337 15.5748031496063 16.88976377952756
 # M 43.791469194312796 40.96208530805687 48.93838862559242
 # H 53.66197183098591 53.38028169014085 70.28873239436619
-# True :)
+# True
 
 # Exercise 2 (3 marks). Using the “Training” set of the Alzheimer’s Disease3 dataset, you will need to find several proximity graphs: 
 # a) Minimum Spanning Tree (MST) for samples (0.5 marks)
@@ -185,7 +180,7 @@ samples_matrix = build_matrix(len(samples_labels))
 
 for i, sample in enumerate(samples_data):
     for j, sample2 in enumerate(samples_data):
-        write_to_matrix(samples_matrix, i, j, samples_distance(list(sample), list(sample2)))
+        write_to_matrix(samples_matrix, i, j, chebyshev_distance(list(sample), list(sample2)))
 
 alzheimers_samples_mst = GMLBuilder("alzheimers_samples_mst.gml")
 mst_prim(samples_matrix, alzheimers_samples_mst, samples_labels)
@@ -201,7 +196,7 @@ proteins_matrix = build_matrix(len(proteins_data), default=0.0)
 
 for i, sample in enumerate(proteins_data):
     for j, sample2 in enumerate(proteins_data):
-        write_to_matrix(proteins_matrix, i, j, proteins_distance(list(sample), list(sample2)))
+        write_to_matrix(proteins_matrix, i, j, chebyshev_distance(list(sample), list(sample2)))
 
 
 alzheimers_proteins_mst = GMLBuilder("alzheimers_proteins_mst.gml")
@@ -244,24 +239,10 @@ for column in range(len(samples_data[0])):
 
         samples_data_normalized[i][column] = bucket
 
-print("E")
 print(buckets_mapping)
 
 print(samples_data_normalized[0])
 
-# AD and NDC
-labels = ["AD", "NDC"]
-data_groups = [[], []]
-for i, entry in enumerate(samples_data_normalized):
-    index = 1 if samples_labels[i].startswith("AD") else 0
-    data_groups[index].append(entry)
-
-# Attempt 1
-selection = feature_selection(data_groups, labels, depth_remaining=0)
-print(selection) # {104, 105, 108, 110, 112, 113, 116, 117, 119} i.e. not a good selection :(
-# print(feature_selection(data_groups, samples_labels, depth_remaining=1))
-
-# Attempt 2
 # Checking pearson correlation for each feature and the class
 correlations = []
 print(samples_data_normalized[0])
@@ -404,29 +385,11 @@ for sample, actual_class in zip(test_ad_data_reduced + test_mci_data_reduced, te
 results = PerformanceMeasurer(true_positives, false_positives, true_negatives, false_negatives)
 
 print("Results Alzheimer's Dataset")
-
-# Sensitivity (recall)
-# True positive rate (TPR) = TP / (TP + FN)
 print(results.sensitivity())
-
-# Specificity ()
-# True negative rate (TNR) = TN / (TN + FP)
 print(results.specificity())
-
-# Accuracy
-# (TP+TN)/(TP+TN+FP+FN)
 print(results.accuracy())
-
-# F1-score
-# 2 / ((1 / recall) + (1 / precision))
 print(results.f1_score())
-
-# Matthews Correlation Coefficient
-# (TP * TN - FP * FN) / sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
 print(results.matthews_correlation_coefficient())
-
-# Youden’s J statistic (roc)
-# sensitivity + specificity - 1
 print(results.youdens_j_statistic())
 
 
@@ -435,7 +398,6 @@ print(results.youdens_j_statistic())
 from sklearn.datasets import load_iris
 
 iris = load_iris()
-print(iris)
 # pylint complains about iris typing from sklearn but this is fine
 # pylance also has complaints hence the type ignore-s
 # pylint: disable=no-member
@@ -452,7 +414,7 @@ iris_matrix = build_matrix(len(iris_data))
 for i, sample in enumerate(iris_data):
     for j, sample2 in enumerate(iris_data):
         # samples distance is chebyshev distance which I consider ok for this
-        write_to_matrix(iris_matrix, i, j, samples_distance(sample, sample2))
+        write_to_matrix(iris_matrix, i, j, chebyshev_distance(sample, sample2))
 
 iris_mst = GMLBuilder("iris_mst.gml")
 mst_prim(iris_matrix, iris_mst, iris_labels_names)
@@ -463,7 +425,7 @@ iris_mst.write()
 iris_features_matrix = build_matrix(len(iris_features))
 for i, sample in enumerate(iris_features):
     for j, sample2 in enumerate(iris_features):
-        write_to_matrix(iris_features_matrix, i, j, samples_distance(sample, sample2))
+        write_to_matrix(iris_features_matrix, i, j, chebyshev_distance(sample, sample2))
 
 iris_features_mst = GMLBuilder("iris_features_mst.gml")
 mst_prim(iris_features_matrix, iris_features_mst, [f"Feature-{i}" for i in range(len(iris_features))])
@@ -544,7 +506,6 @@ for i, column in enumerate(training_data):
 
 class_mapping = {i: label for i, label in enumerate(training_labels)}
 
-# sanity check
 print(classify(training_data, training_matrix, class_mapping, test_data[0]), test_labels[0]) # should be the same
 
 # 3c (performance)
